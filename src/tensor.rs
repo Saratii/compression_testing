@@ -21,7 +21,7 @@ impl Tensor {
         }
         Tensor{dims: dims.clone(), data: vec![0.0; prod], size: prod}
     }
-    fn index_to_flat(&self, index: &[usize]) -> usize{
+    pub fn index_to_flat(&self, index: &[usize]) -> usize{
         let mut i = 0;
         let mut stride = 1;
         for (dim, len) in index.iter().zip(&self.dims) {
@@ -30,9 +30,15 @@ impl Tensor {
         }
         i
     }
+    pub fn index_flat(&self, index: usize) -> Option<f32> {
+        if index >= self.size {
+            panic!("Index: {:?} exceeds maximum lenght of: {:?}", index, self.size);
+        }
+        Some(self.data[index])
+    }
     pub fn index(&self, index: &[usize]) -> Option<f32> {
         if index.len() != self.dims.len(){
-            panic!("index dimension does not match data dimension");
+            panic!("Index: {:?} dimension does not match data dimension: {:?}", index, self.dims);
         }
         let mut i = 0;
         let mut stride = 1;
@@ -61,8 +67,11 @@ impl Tensor {
         let mut result = Tensor::new(&vec![self.dims[0], matrix_b.dims[1]]);
         for i in 0..self.dims[0]{
             for j in 0..matrix_b.dims[1]{
-                for k in 0..matrix_b.dims[0]{
-                    result.set(&[i, j], result.index(&[i, j]).unwrap() + self.index(&[i, k]).unwrap() * matrix_b.index(&[k, j]).unwrap())
+                for k in 0..self.dims[1]{
+                    let a = self.index(&[i, k]).unwrap();
+                    let b = matrix_b.index(&[k, j]).unwrap();
+                    let c = a * b;
+                    result.set(&[i, j], result.index(&[i, j]).unwrap() + self.index(&[i, k]).unwrap() * matrix_b.index(&[k, j]).unwrap());
                 }
             }
         }
